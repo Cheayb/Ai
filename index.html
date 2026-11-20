@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ستوديو برومبتات ومعاينة الفيديو</title>
+<style>
+  :root {
+    --bg: #0b1120;
+    --card: #162033;
+    --card-2: #090e1a;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #22c55e;
+    --warn: #f59e0b;
+    --border: rgba(148, 163, 184, 0.18);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding-bottom: 36px;
+  }
+  header {
+    background: linear-gradient(135deg, #090e1a, #1e1b4b);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .badge {
+    font-size: 0.72rem;
+    background: rgba(56, 189, 248, 0.16);
+    color: var(--accent);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .card-title {
+    margin: 0 0 10px 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  @media (min-width: 600px) {
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  }
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  input, select, textarea {
+    font-family: inherit;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    padding: 9px 11px;
+    width: 100%;
+  }
+  textarea {
+    min-height: 84px;
+    resize: vertical;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    padding: 9px 12px;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+  }
+  button:active { transform: scale(0.98); }
+  button.primary {
+    background: var(--accent);
+    color: #062033;
+    border-color: transparent;
+  }
+  button.success {
+    background: var(--accent-2);
+    color: #052e16;
+    border-color: transparent;
+  }
+  button.warn {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.35);
+  }
+  .stage-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #020617;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .prompt-box {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 0.88rem;
+    white-space: pre-wrap;
+    margin-top: 8px;
+  }
+  .prompt-box[dir="ltr"] {
+    text-align: left;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+  }
+  .saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .saved-item {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .saved-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+  .saved-item-text {
+    font-size: 0.82rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+  }
+  .del-btn {
+    padding: 4px 8px;
+    font-size: 0.76rem;
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+  .toast {
+    font-size: 0.8rem;
+    color: #86efac;
+    min-height: 18px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>
+    <span>ستوديو برومبتات ومعاينة الفيديو</span>
+    <span class="badge">محلي • بدون API</span>
+  </h1>
+</header>
+
+<div class="container">
+  <section class="card">
+    <h2 class="card-title">1. بناء برومبت الفيديو</h2>
+    <div class="grid-2">
+      <label>
+        فكرة المشهد الرئيسية
+        <input type="text" id="sceneInput" value="حرفي يقص الزليج بدقة في ورشة مضاءة">
+      </label>
+      <label>
+        الأسلوب البصري
+        <select id="styleSelect">
+          <option value="cinematic realistic">واقعي سينمائي (Cinematic Realistic)</option>
+          <option value="3d animation render">تحريك ثلاثي الأبعاد (3D Animation)</option>
+          <option value="minimalist documentary">وثائقي بسيط (Documentary)</option>
+          <option value="vibrant motion graphic">موشن جرافيك حيوي (Motion Graphic)</option>
+        </select>
+      </label>
+      <label>
+        حركة الكاميرا
+        <select id="cameraSelect">
+          <option value="slow dolly zoom in">تقريب بطيء (Slow Dolly In)</option>
+          <option value="smooth pan left to right">تحريك أفقي ناعم (Smooth Pan)</option>
+          <option value="overhead top-down shot">زاوية علوية مباشرة (Top-Down)</option>
+          <option value="dynamic handheld tracking">تتبع ديناميكي (Handheld Tracking)</option>
+        </select>
+      </label>
+      <label>
+        الإضاءة والأجواء
+        <select id="lightSelect">
+          <option value="warm morning sunlight through window">إضاءة شمس صباحية دافئة</option>
+          <option value="dramatic studio rim light">إضاءة ستوديو درامية</option>
+          <option value="soft natural daylight">إضاءة نهارية طبيعية ناعمة</option>
+          <option value="neon night atmosphere">أجواء ليلية حديثة</option>
+        </select>
+      </label>
+      <label>
+        الأبعاد (Aspect Ratio)
+        <select id="ratioSelect">
+          <option value="9:16 vertical">عمودي Reels / TikTok (9:16)</option>
+          <option value="16:9 horizontal">أفقي YouTube (16:9)</option>
+          <option value="1:1 square">مربع (1:1)</option>
+        </select>
+      </label>
+      <label>
+        المدة المقترحة (ثواني)
+        <select id="durationSelect">
+          <option value="5s">5 ثوانٍ</option>
+          <option value="8s">8 ثوانٍ</option>
+          <option value="10s">10 ثوانٍ</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="genPromptBtn">توليد البرومبت</button>
+      <button class="success" id="copyEnBtn">نسخ البرومبت الإنجليزي</button>
+      <button id="copyArBtn">نسخ الوصف العربي</button>
+      <button class="warn" id="savePromptBtn">حفظ في السجل</button>
+    </div>
+
+    <div class="toast" id="toastMsg"></div>
+
+    <div class="prompt-box" id="arPromptBox"></div>
+    <div class="prompt-box" id="enPromptBox" dir="ltr"></div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">2. ستوديو المعاينة والتحريك المحلي (Canvas)</h2>
+    <div class="grid-2" style="margin-bottom: 8px;">
+      <label>
+        نص يظهر على المشهد
+        <input type="text" id="overlayTextInput" value="قياس دقيق • زاوية مثالية">
+      </label>
+      <label>
+        اختيار صورة خلفية (اختياري)
+        <input type="file" id="bgFileInput" accept="image/*">
+      </label>
+    </div>
+
+    <div class="stage-wrap">
+      <canvas id="previewCanvas" width="960" height="540"></canvas>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="toggleAnimBtn">إيقاف / تشغيل التحريك</button>
+      <button id="resetAnimBtn">إعادة ضبط المشهد</button>
+      <button class="success" id="snapshotBtn">حفظ لقطة PNG</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">3. فتح أدوات توليد الفيديو الخارجية</h2>
+    <p style="margin: 0 0 8px 0; font-size: 0.82rem; color: var(--muted);">
+      انسخ البرومبت الإنجليزي أولاً، ثم افتح الأداة التي تفضلها للصق البرومبت وتوليد الفيديو.
+    </p>
+    <div class="row">
+      <button onclick="openTool('https://runwayml.com')">Runway</button>
+      <button onclick="openTool('https://luma.ai/dream-machine')">Luma Dream Machine</button>
+      <button onclick="openTool('https://pika.art')">Pika</button>
+      <button onclick="openTool('https://firefly.adobe.com')">Adobe Firefly</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <h2 class="card-title" style="margin:0;">4. سجل البرومبتات المحفوظة</h2>
+      <button class="del-btn" id="clearSavedBtn">مسح السجل</button>
+    </div>
+    <div class="saved-list" id="savedList"></div>
+  </section>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = "ai_video_prompt_studio_v1";
+
+  const sceneInput = document.getElementById("sceneInput");
+  const styleSelect = document.getElementById("styleSelect");
+  const cameraSelect = document.getElementById("cameraSelect");
+  const lightSelect = document.getElementById("lightSelect");
+  const ratioSelect = document.getElementById("ratioSelect");
+  const durationSelect = document.getElementById("durationSelect");
+
+  const genPromptBtn = document.getElementById("genPromptBtn");
+  const copyEnBtn = document.getElementById("copyEnBtn");
+  const copyArBtn = document.getElementById("copyArBtn");
+  const savePromptBtn = document.getElementById("savePromptBtn");
+  const clearSavedBtn = document.getElementById("clearSavedBtn");
+
+  const toastMsg = document.getElementById("toastMsg");
+  const arPromptBox = document.getElementById("arPromptBox");
+  const enPromptBox = document.getElementById("enPromptBox");
+  const savedList = document.getElementById("savedList");
+
+  const overlayTextInput = document.getElementById("overlayTextInput");
+  const bgFileInput = document.getElementById("bgFileInput");
+  const toggleAnimBtn = document.getElementById("toggleAnimBtn");
+  const resetAnimBtn = document.getElementById("resetAnimBtn");
+  const snapshotBtn = document.getElementById("snapshotBtn");
+
+  const canvas = document.getElementById("previewCanvas");
+  const ctx = canvas.getContext("2d");
+
+  let bgImg = null;
+  let running = true;
+  let tick = 0;
+
+  window.openTool = function(url) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  function showToast(msg) {
+    toastMsg.textContent = msg;
+    setTimeout(() => {
+      if (toastMsg.textContent === msg) toastMsg.textContent = "";
+    }, 2500);
+  }
+
+  function buildPrompts() {
+    const scene = (sceneInput.value || "").trim() || "مشهد بصري واضح";
+    const styleLabel = styleSelect.options[styleSelect.selectedIndex].text;
+    const styleVal = styleSelect.value;
+    const camLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
+    const camVal = cameraSelect.value;
+    const lightLabel = lightSelect.options[lightSelect.selectedIndex].text;
+    const lightVal = lightSelect.value;
+    const ratioVal = ratioSelect.value;
+    const durationVal = durationSelect.value;
+
+    const arText =
+      `المشهد: ${scene}\n` +
+      `الأسلوب: ${styleLabel}\n` +
+      `حركة الكاميرا: ${camLabel}\n` +
+      `الإضاءة: ${lightLabel}\n` +
+      `الأبعاد: ${ratioVal} | المدة: ${durationVal}`;
+
+    const enText =
+      `${scene}, ${styleVal}, ${camVal}, ${lightVal}, crisp details, smooth motion, ${ratioVal}, ${durationVal}`;
+
+    arPromptBox.textContent = arText;
+    enPromptBox.textContent = enText;
+    return { arText, enText };
+  }
+
+  async function copyText(txt, label) {
+    try {
+      await navigator.clipboard.writeText(txt);
+      showToast("تم نسخ " + label);
+    } catch (_) {
+      const ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast("تم نسخ " + label);
+    }
+  }
+
+  function loadSaved() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveList(items) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch (_) {}
+  }
+
+  function renderSaved() {
+    const items = loadSaved();
+    if (!items.length) {
+      savedList.innerHTML = `<div style="font-size:0.82rem; color:var(--muted);">لا توجد برومبتات محفوظة بعد.</div>`;
+      return;
+    }
+    savedList.innerHTML = items.map((it, i) => `
+      <div class="saved-item">
+        <div class="saved-item-top">
+          <span>${it.title || "برومبت #" + (i + 1)}</span>
+          <div style="display:flex; gap:6px;">
+            <button style="padding:4px 8px; font-size:0.76rem;" data-copy="${i}">نسخ EN</button>
+            <button class="del-btn" data-del="${i}">حذف</button>
+          </div>
+        </div>
+        <div class="saved-item-text">${it.en}</div>
+      </div>
+    `).join("");
+
+    savedList.querySelectorAll("[data-copy]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.getAttribute("data-copy"), 10);
+        if (items[idx]) copyText(items[idx].en, "البرومبت المحفوظ");
+      });
+    });
+
+    savedList.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.getAttribute("data-del"), 10);
+        const next = loadSaved().filter((_, k) => k !== idx);
+        saveList(next);
+        renderSaved();
+      });
+    });
+  }
+
+  function drawFrame() {
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, "#0f172a");
+    grad.addColorStop(1, "#1e293b");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    if (bgImg) {
+      const zoom = 1 + Math.sin(tick * 0.02) * 0.04;
+      const panX = Math.cos(tick * 0.015) * 18;
+      const scale = Math.max(w / bgImg.width, h / bgImg.height) * zoom;
+      const iw = bgImg.width * scale;
+      const ih = bgImg.height * scale;
+      ctx.drawImage(bgImg, (w - iw) / 2 + panX, (h - ih) / 2, iw, ih);
+      ctx.fillStyle = "rgba(2, 6, 23, 0.35)";
+      ctx.fillRect(0, 0, w, h);
+    } else {
+      // Animated geometric motion bars
+      for (let i = 0; i < 6; i++) {
+        const offset = ((tick * 2 + i * 160) % (w + 200)) - 100;
+        ctx.fillStyle = i % 2 === 0 ? "rgba(56, 189, 248, 0.14)" : "rgba(34, 197, 94, 0.12)";
+        ctx.beginPath();
+        ctx.roundRect(offset, 70 + i * 68, 150, 26, 13);
+        ctx.fill();
+      }
+    }
+
+    // Moving accent badge & overlay text
+    const text = (overlayTextInput.value || "").trim() || "معاينة المشهد";
+    const pulseX = Math.sin(tick * 0.03) * 24;
+
+    ctx.save();
+    ctx.font = "bold 34px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#f8fafc";
+    ctx.fillText(text, w / 2 + pulseX, h * 0.52);
+
+    ctx.font = "600 20px system-ui, sans-serif";
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillText(styleSelect.options[styleSelect.selectedIndex].text, w / 2, h * 0.63);
+    ctx.restore();
+  }
+
+  function loop() {
+    if (running) {
+      tick += 1;
+      drawFrame();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  genPromptBtn.addEventListener("click", () => {
+    buildPrompts();
+    showToast("تم تحديث البرومبت");
+  });
+
+  [sceneInput, styleSelect, cameraSelect, lightSelect, ratioSelect, durationSelect].forEach(el => {
+    el.addEventListener("input", buildPrompts);
+    el.addEventListener("change", buildPrompts);
+  });
+
+  copyEnBtn.addEventListener("click", () => {
+    const { enText } = buildPrompts();
+    copyText(enText, "البرومبت الإنجليزي");
+  });
+
+  copyArBtn.addEventListener("click", () => {
+    const { arText } = buildPrompts();
+    copyText(arText, "الوصف العربي");
+  });
+
+  savePromptBtn.addEventListener("click", () => {
+    const { enText } = buildPrompts();
+    const items = loadSaved();
+    items.unshift({
+      title: (sceneInput.value || "").trim().slice(0, 32) || "مشهد محفوظ",
+      en: enText
+    });
+    saveList(items.slice(0, 25));
+    renderSaved();
+    showToast("تم حفظ البرومبت في السجل");
+  });
+
+  clearSavedBtn.addEventListener("click", () => {
+    saveList([]);
+    renderSaved();
+    showToast("تم مسح السجل");
+  });
+
+  bgFileInput.addEventListener("change", e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        bgImg = img;
+        drawFrame();
+        showToast("تم تحميل صورة الخلفية");
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  toggleAnimBtn.addEventListener("click", () => {
+    running = !running;
+    if (running) drawFrame();
+  });
+
+  resetAnimBtn.addEventListener("click", () => {
+    tick = 0;
+    bgImg = null;
+    bgFileInput.value = "";
+    drawFrame();
+  });
+
+  snapshotBtn.addEventListener("click", () => {
+    drawFrame();
+    const link = document.createElement("a");
+    link.download = "video-preview.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    showToast("تم حفظ لقطة PNG");
+  });
+
+  buildPrompts();
+  renderSaved();
+  drawFrame();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
